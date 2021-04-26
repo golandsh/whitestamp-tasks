@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+    <head>
+        <title>TODO Tasks</title>
+        <style rel="stylesheet">
+            #container {
+                display: flex;
+                flex-direction: column;
+            }
+            .tasks {
+                display: flex;
+                width: 200px;
+                justify-content: space-between;
+            }
+            .checked {
+                text-decoration: line-through;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            {% for task in tasks: %}
+                {% if task.completed %}
+                <div id="{{task.taskId}}" class="tasks checked">
+                    <input type="checkbox" onClick="$(this).patchTask($(this))" disabled checked />
+                    <span>{{task.name}}</span>
+                    <button onClick="$(this).deleteTask($(this))">Delete</button>
+                </div>
+                {% else %}
+                <div id="{{task.taskId}}" class="tasks">
+                    <input type="checkbox" onClick="$(this).patchTask($(this))" />
+                    <span>{{task.name}}</span>
+                    <button onClick="$(this).deleteTask($(this))">Delete</button>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="actions">
+            <a href="#" onClick="$(this).toggleAction()">Add New Task</a>
+            <div class="add" hidden>
+                <input type="text" id="newTask" />
+                <button onClick="$(this).addTask()">Add Task</button>
+                <button onClick="$(this).toggleAction()">Cancel</button>
+            </div>
+        </div>
+
+        <script
+                src="https://code.jquery.com/jquery-3.6.0.min.js"
+                integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+                crossorigin="anonymous"></script>
+        <script>
+            $(document).ready(function() {
+                $.fn.patchTask = function(e) {
+                    const id = $(e).parent().attr('id');
+                    $.ajax({
+                        type: 'PATCH',
+                        url: 'http://localhost:8080/',
+                        contentType: "application/json",
+                        data: JSON.stringify({taskId: id}),
+                        success: function () {
+                            $(e).parent().addClass('checked');
+                            $(e).attr('disabled', true);
+                        }
+                    });
+                }
+
+                $.fn.deleteTask = function(e) {
+                    const id = $(e).parent().attr('id');
+                    $.ajax({
+                        type: 'DELETE',
+                        url: `http://localhost:8080?taskId=${id}`,
+                        success: function () {
+                            $(e).parent().remove();
+                        }
+                    });
+                }
+
+                $.fn.addTask = function() {
+                    const taskName = $('#newTask').val();
+                    $.ajax({
+                        type: 'POST',
+                        url: 'http://localhost:8080/',
+                        contentType: "application/json",
+                        data: JSON.stringify({name: taskName}),
+                        success: function (result) {
+                            const taskId = JSON.parse(result).taskId;
+
+                            $(`<div id=${taskId} class='tasks'>
+                                <input type='checkbox' onClick='$(this).patchTask($(this))' />
+                                <span>${taskName}</span>
+                                <button onClick='$(this).deleteTask($(this))'>Delete</button>
+                                </div>`).appendTo('#container');
+                            $(this).toggleAction();
+                        }
+                    });
+                }
+
+                $.fn.toggleAction = function() {
+                    const isHidden = $('.add').attr('hidden') === 'hidden';
+                    $('a').attr('hidden', isHidden);
+                    $('.add').attr('hidden', !isHidden);
+                }
+            })
+        </script>
+    </body>
+</html>

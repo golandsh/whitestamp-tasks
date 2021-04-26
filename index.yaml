@@ -1,0 +1,8 @@
+indexes:
+
+  - kind: task
+    ancestor: no
+    properties:
+      - name: taskId
+      - name: name
+      - name: completed
